@@ -1,0 +1,313 @@
+---
+
+# FRC Java Programming Glossary with Code Examples
+
+---
+
+### 1. **TimedRobot**
+
+* **What:** Base robot class controlling robot lifecycle.
+
+* **How to use:**
+  Extend it and override lifecycle methods like `robotInit()` and `teleopPeriodic()`.
+
+```java
+import edu.wpi.first.wpilibj.TimedRobot;
+
+public class Robot extends TimedRobot {
+    @Override
+    public void robotInit() {
+        System.out.println("Robot started");
+    }
+
+    @Override
+    public void teleopPeriodic() {
+        // Runs every 20ms in teleop mode
+    }
+}
+```
+
+---
+
+### 2. **SubsystemBase**
+
+* **What:** Base class for hardware subsystems (motors, sensors).
+
+* **How to use:**
+  Extend it to create subsystems controlling motors and sensors.
+
+```java
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
+
+public class DriveSubsystem extends SubsystemBase {
+    private PWMSparkMax leftMotor = new PWMSparkMax(0);
+
+    public void drive(double speed) {
+        leftMotor.set(speed);
+    }
+}
+```
+
+---
+
+### 3. **CommandBase**
+
+* **What:** Base class for commands — robot actions.
+
+* **How to use:**
+  Extend and override `execute()`, `isFinished()`, and `end()`.
+
+```java
+import edu.wpi.first.wpilibj2.command.CommandBase;
+
+public class DriveForward extends CommandBase {
+    private final DriveSubsystem drive;
+    private int counter = 0;
+
+    public DriveForward(DriveSubsystem subsystem) {
+        drive = subsystem;
+        addRequirements(drive);
+    }
+
+    @Override
+    public void execute() {
+        drive.drive(0.5); // drive forward at half speed
+        counter++;
+    }
+
+    @Override
+    public boolean isFinished() {
+        return counter >= 100; // finish after 100 cycles (~2 seconds)
+    }
+
+    @Override
+    public void end(boolean interrupted) {
+        drive.drive(0); // stop motors
+    }
+}
+```
+
+---
+
+### 4. **CommandScheduler**
+
+* **What:** Runs commands, ensures only one command uses a subsystem at a time.
+
+* **How to use:**
+  Call `CommandScheduler.getInstance().run()` periodically.
+
+```java
+import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
+
+public class Robot extends TimedRobot {
+    @Override
+    public void robotPeriodic() {
+        CommandScheduler.getInstance().run(); // run commands every cycle
+    }
+}
+```
+
+---
+
+### 5. **Motor Controllers**
+
+* **What:** Interface to physical motors.
+
+* **How to use:**
+  Initialize and call `.set(speed)` with values from -1 to 1.
+
+```java
+import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
+
+PWMSparkMax motor = new PWMSparkMax(0);
+
+motor.set(0.75); // run motor at 75% forward power
+```
+
+---
+
+### 6. **XboxController / Joystick**
+
+* **What:** Reads user input from controllers.
+
+* **How to use:**
+  Instantiate with port, read axes or buttons.
+
+```java
+import edu.wpi.first.wpilibj.XboxController;
+
+XboxController controller = new XboxController(0);
+
+double leftY = controller.getLeftY(); // get left joystick Y axis
+boolean buttonA = controller.getAButton(); // true if A button pressed
+```
+
+---
+
+### 7. **Encoder**
+
+* **What:** Measures rotational position or speed.
+
+* **How to use:**
+  Initialize with digital ports, use `.get()`, `.getDistance()`, and `.reset()`.
+
+```java
+import edu.wpi.first.wpilibj.Encoder;
+
+Encoder encoder = new Encoder(0, 1);
+
+double distance = encoder.getDistance(); // get traveled distance
+encoder.reset(); // reset encoder count
+```
+
+---
+
+### 8. **Gyro**
+
+* **What:** Measures robot heading (angle).
+
+* **How to use:**
+  Calibrate, get angle, reset.
+
+```java
+import edu.wpi.first.wpilibj.ADXRS450_Gyro;
+
+ADXRS450_Gyro gyro = new ADXRS450_Gyro();
+
+gyro.calibrate();
+double angle = gyro.getAngle();
+gyro.reset(); // zero gyro reading
+```
+
+---
+
+### 9. **setDefaultCommand()**
+
+* **What:** Runs a command automatically when no other commands use the subsystem.
+
+* **How to use:**
+  Call on a subsystem to set a default behavior.
+
+```java
+driveSubsystem.setDefaultCommand(new DriveWithJoystick(driveSubsystem, controller));
+```
+
+---
+
+### 10. **JoystickButton**
+
+* **What:** Detects button presses on joystick/controller.
+
+* **How to use:**
+  Bind commands or actions to button events.
+
+```java
+import edu.wpi.first.wpilibj2.command.button.JoystickButton;
+
+JoystickButton buttonA = new JoystickButton(controller, XboxController.Button.kA.value);
+
+buttonA.whenPressed(() -> System.out.println("A button pressed"));
+```
+
+---
+
+### 11. **addRequirements()**
+
+* **What:** Declares which subsystems a command uses (to avoid conflicts).
+
+* **How to use:**
+  Call in command constructor.
+
+```java
+public class SomeCommand extends CommandBase {
+    public SomeCommand(DriveSubsystem drive) {
+        addRequirements(drive); // this command requires the drive subsystem
+    }
+}
+```
+
+---
+
+### 12. **Command lifecycle methods**
+
+* **What:** Define what commands do, when they finish, and cleanup.
+
+* **How to use:**
+  Override these in your command:
+
+```java
+@Override
+public void execute() {
+    // code to run each cycle
+}
+
+@Override
+public boolean isFinished() {
+    // return true when done
+    return false;
+}
+
+@Override
+public void end(boolean interrupted) {
+    // cleanup code, stop motors etc.
+}
+```
+
+---
+
+### 13. **SmartDashboard**
+
+* **What:** Display data and read inputs from driver station dashboard.
+
+* **How to use:**
+  Put/get values for monitoring or tuning.
+
+```java
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+
+SmartDashboard.putNumber("Arm Angle", armSubsystem.getArmAngle());
+
+double targetAngle = SmartDashboard.getNumber("Target Angle", 90);
+```
+
+---
+
+### 14. **Deadband**
+
+* **What:** Ignore small joystick inputs to avoid jitter.
+
+* **How to use:**
+  Check if value is below threshold and zero it.
+
+```java
+double joystickValue = controller.getLeftY();
+
+if (Math.abs(joystickValue) < 0.1) {
+    joystickValue = 0;
+}
+```
+
+---
+
+### 15. **Proportional Control**
+
+* **What:** Control output proportional to error (difference from target).
+
+* **How to use:**
+  Calculate error and multiply by constant.
+
+```java
+double target = 90; // degrees
+double current = armSubsystem.getArmAngle();
+
+double error = target - current;
+double kP = 0.01;
+double speed = error * kP;
+
+speed = Math.max(Math.min(speed, 0.5), -0.5); // clamp speed
+
+armSubsystem.setMotorSpeed(speed);
+```
+
